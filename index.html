@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบตรวจจับใบหน้ามนุษย์</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>ระบบตรวจจับใบหน้ามนุษย์</h1>
+        
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-content">
+                <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                <p>คลิกเพื่ออัปโหลดภาพ</p>
+                <p class="small-text">รองรับไฟล์ JPG, PNG, GIF</p>
+            </div>
+            <input type="file" id="fileInput" accept="image/*">
+        </div>
+        
+        <div class="camera-section">
+            <button id="cameraBtn" class="camera-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                    <circle cx="12" cy="13" r="4"></circle>
+                </svg>
+                ใช้กล้อง
+            </button>
+        </div>
+        
+        <div class="result-section" id="resultSection" style="display: none;">
+            <div class="image-preview">
+                <img id="previewImage" src="" alt="Preview">
+            </div>
+            <div class="result" id="result"></div>
+            <button id="resetBtn" class="reset-btn">ตรวจสอบภาพใหม่</button>
+        </div>
+        
+        <video id="camera" style="display: none;" autoplay></video>
+        <button id="captureBtn" class="capture-btn" style="display: none;">ถ่ายภาพ</button>
+        <canvas id="canvas" style="display: none;"></canvas>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-detection@latest"></script>
+    <script src="script.js"></script>
+</body>
+</html>
