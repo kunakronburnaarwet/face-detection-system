@@ -111,7 +111,8 @@ class AdvancedFaceDetection {
                 faceDetection.SupportedModels.MediaPipeFaceDetector,
                 {
                     runtime: 'tfjs',
-                    maxFaces: 1
+                    maxFaces: 5,
+                    detectionConfidence: 0.5
                 }
             );
             
@@ -230,6 +231,10 @@ class AdvancedFaceDetection {
             let faces = [];
             let analysis = {};
             
+            if (!this.models[this.currentModel]) {
+                throw new Error(`Model ${this.currentModel} not loaded`);
+            }
+            
             switch (this.currentModel) {
                 case 'mediapipe':
                     faces = await this.models.mediapipe.estimateFaces(img);
@@ -245,6 +250,15 @@ class AdvancedFaceDetection {
                     break;
             }
             
+            if (!analysis.faces || analysis.faces.length === 0) {
+                return {
+                    result: "วัตถุ",
+                    confidence: 0,
+                    faces: [],
+                    details: "ไม่พบใบหน้าในภาพ"
+                };
+            }
+            
             return this.makeFinalDecision(analysis);
             
         } catch (error) {
@@ -252,6 +266,7 @@ class AdvancedFaceDetection {
             return {
                 result: "วัตถุ",
                 confidence: 0,
+                faces: [],
                 details: "เกิดข้อผิดพลาดในการวิเคราะห์"
             };
         }
@@ -267,13 +282,13 @@ class AdvancedFaceDetection {
         const faceQuality = this.assessFaceQuality(face);
         const sizeRatio = this.calculateFaceSizeRatio(face, img);
         
-        const strictness = this.settings.strictness / 10;
+        const strictness = this.settings.strictness / 15;
         
-        if (quality < 0.3 || faceQuality < 0.6 || sizeRatio < 0.05) {
+        if (quality < 0.15 || faceQuality < 0.3 || sizeRatio < 0.02) {
             return { result: "วัตถุ", confidence: Math.max(quality, faceQuality), faces: [face] };
         }
         
-        const overallConfidence = (quality + faceQuality + Math.min(sizeRatio * 10, 1)) / 3;
+        const overallConfidence = (quality + faceQuality + Math.min(sizeRatio * 15, 1)) / 3;
         
         if (overallConfidence < strictness) {
             return { result: "วัตถุ", confidence: overallConfidence, faces: [face] };
@@ -293,13 +308,13 @@ class AdvancedFaceDetection {
         
         const sizeRatio = (prediction.box.width * prediction.box.height) / (img.width * img.height);
         
-        const strictness = this.settings.strictness / 10;
+        const strictness = this.settings.strictness / 15;
         
-        if (quality < 0.3 || confidence < 0.7 || sizeRatio < 0.05) {
+        if (quality < 0.15 || confidence < 0.5 || sizeRatio < 0.02) {
             return { result: "วัตถุ", confidence: Math.min(confidence, quality), faces: [prediction] };
         }
         
-        const overallConfidence = (quality + confidence + Math.min(sizeRatio * 10, 1)) / 3;
+        const overallConfidence = (quality + confidence + Math.min(sizeRatio * 15, 1)) / 3;
         
         if (overallConfidence < strictness) {
             return { result: "วัตถุ", confidence: overallConfidence, faces: [prediction] };
@@ -320,13 +335,13 @@ class AdvancedFaceDetection {
         const sizeRatio = this.calculateFaceSizeRatio(face, img);
         const landmarkQuality = landmarks.length / 468;
         
-        const strictness = this.settings.strictness / 10;
+        const strictness = this.settings.strictness / 15;
         
-        if (quality < 0.3 || landmarkQuality < 0.7 || sizeRatio < 0.05) {
+        if (quality < 0.15 || landmarkQuality < 0.4 || sizeRatio < 0.02) {
             return { result: "วัตถุ", confidence: Math.min(quality, landmarkQuality), faces: [face] };
         }
         
-        const overallConfidence = (quality + landmarkQuality + Math.min(sizeRatio * 10, 1)) / 3;
+        const overallConfidence = (quality + landmarkQuality + Math.min(sizeRatio * 15, 1)) / 3;
         
         if (overallConfidence < strictness) {
             return { result: "วัตถุ", confidence: overallConfidence, faces: [face] };
@@ -352,6 +367,8 @@ class AdvancedFaceDetection {
         const data = imageData.data;
         
         let totalBrightness = 0;
+        let contrast = 0;
+        
         for (let i = 0; i < data.length; i += 4) {
             const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3;
             totalBrightness += brightness;
@@ -359,19 +376,29 @@ class AdvancedFaceDetection {
         
         const avgBrightness = totalBrightness / (data.length / 4);
         
-        if (avgBrightness < 30 || avgBrightness > 225) {
-            return 0.2;
+        for (let i = 0; i < data.length; i += 4) {
+            const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3;
+            contrast += Math.abs(brightness - avgBrightness);
         }
         
-        return Math.min(avgBrightness / 150, 1.0);
+        const avgContrast = contrast / (data.length / 4);
+        
+        if (avgBrightness < 20 || avgBrightness > 235) {
+            return 0.1;
+        }
+        
+        const brightnessScore = Math.min(avgBrightness / 180, 1.0);
+        const contrastScore = Math.min(avgContrast / 80, 1.0);
+        
+        return (brightnessScore + contrastScore) / 2;
     }
 
     assessFaceQuality(face) {
         const confidence = face.score || 0.5;
         const keypoints = face.keypoints || [];
         
-        if (confidence < 0.8) {
-            return 0.3;
+        if (confidence < 0.4) {
+            return 0.2;
         }
         
         const requiredPoints = ['leftEye', 'rightEye', 'noseTip', 'mouthLeft', 'mouthRight'];
