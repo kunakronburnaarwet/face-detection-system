@@ -3,51 +3,159 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบตรวจจับใบหน้ามนุษย์</title>
+    <title>AI Face Detection System</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <h1>ระบบตรวจจับใบหน้ามนุษย์</h1>
-        
-        <div class="upload-area" id="uploadArea">
-            <div class="upload-content">
-                <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="17 8 12 3 7 8"></polyline>
-                    <line x1="12" y1="3" x2="12" y2="15"></line>
-                </svg>
-                <p>คลิกเพื่ออัปโหลดภาพ</p>
-                <p class="small-text">รองรับไฟล์ JPG, PNG, GIF</p>
+    <div class="app-container">
+        <div class="header">
+            <h1>AI Face Detection System</h1>
+            <p>ระบบตรวจจับใบหน้ามนุษย์ด้วยปัญญาประดิษฐ์</p>
+        </div>
+
+        <div class="model-selection">
+            <h3>เลือกโมเดล AI</h3>
+            <div class="model-options">
+                <label class="model-option">
+                    <input type="radio" name="model" value="mediapipe" checked>
+                    <div class="model-card">
+                        <div class="model-icon">🤖</div>
+                        <div class="model-name">MediaPipe</div>
+                        <div class="model-desc">ความแม่นยำสูง เหมาะกับทุกสถานการณ์</div>
+                    </div>
+                </label>
+                
+                <label class="model-option">
+                    <input type="radio" name="model" value="blazeface">
+                    <div class="model-card">
+                        <div class="model-icon">⚡</div>
+                        <div class="model-name">BlazeFace</div>
+                        <div class="model-desc">เร็วและมีประสิทธิภาพ</div>
+                    </div>
+                </label>
+                
+                <label class="model-option">
+                    <input type="radio" name="model" value="facemesh">
+                    <div class="model-card">
+                        <div class="model-icon">🎯</div>
+                        <div class="model-name">FaceMesh</div>
+                        <div class="model-desc">ตรวจจับจุดบนใบหน้า 468 จุด</div>
+                    </div>
+                </label>
             </div>
-            <input type="file" id="fileInput" accept="image/*">
         </div>
-        
-        <div class="camera-section">
-            <button id="cameraBtn" class="camera-btn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
-                    <circle cx="12" cy="13" r="4"></circle>
-                </svg>
-                ใช้กล้อง
-            </button>
-        </div>
-        
-        <div class="result-section" id="resultSection" style="display: none;">
-            <div class="image-preview">
-                <img id="previewImage" src="" alt="Preview">
+
+        <div class="upload-section">
+            <div class="upload-tabs">
+                <button class="tab-btn active" data-tab="upload">อัปโหลดไฟล์</button>
+                <button class="tab-btn" data-tab="camera">ใช้กล้อง</button>
             </div>
-            <div class="result" id="result"></div>
-            <button id="resetBtn" class="reset-btn">ตรวจสอบภาพใหม่</button>
+
+            <div class="tab-content active" id="upload-tab">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">📁</div>
+                    <div class="upload-text">
+                        <h3>คลิกหรือลากไฟล์มาวางที่นี่</h3>
+                        <p>รองรับไฟล์ JPG, PNG, GIF, WebP</p>
+                        <p class="file-size">ขนาดไฟล์สูงสุด 10MB</p>
+                    </div>
+                    <input type="file" id="fileInput" accept="image/*">
+                </div>
+            </div>
+
+            <div class="tab-content" id="camera-tab">
+                <div class="camera-container">
+                    <video id="camera" autoplay playsinline></video>
+                    <div class="camera-controls">
+                        <button id="startCamera" class="camera-btn">
+                            <span class="btn-icon">📷</span>
+                            เปิดกล้อง
+                        </button>
+                        <button id="capturePhoto" class="capture-btn" style="display: none;">
+                            <span class="btn-icon">📸</span>
+                            ถ่ายภาพ
+                        </button>
+                        <button id="switchCamera" class="switch-btn" style="display: none;">
+                            <span class="btn-icon">🔄</span>
+                            สลับกล้อง
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
-        
-        <video id="camera" style="display: none;" autoplay></video>
-        <button id="captureBtn" class="capture-btn" style="display: none;">ถ่ายภาพ</button>
-        <canvas id="canvas" style="display: none;"></canvas>
+
+        <div class="analysis-section" id="analysisSection" style="display: none;">
+            <div class="loading-spinner" id="loadingSpinner">
+                <div class="spinner"></div>
+                <p>กำลังวิเคราะห์ภาพ...</p>
+            </div>
+
+            <div class="result-container" id="resultContainer" style="display: none;">
+                <div class="image-preview">
+                    <img id="previewImage" src="" alt="Preview">
+                    <div class="analysis-overlay" id="analysisOverlay"></div>
+                </div>
+                
+                <div class="result-info">
+                    <div class="result-badge" id="resultBadge"></div>
+                    <div class="confidence-score" id="confidenceScore"></div>
+                    <div class="analysis-details" id="analysisDetails"></div>
+                </div>
+
+                <div class="action-buttons">
+                    <button id="analyzeAgain" class="btn-primary">
+                        <span class="btn-icon">🔄</span>
+                        วิเคราะห์ใหม่
+                    </button>
+                    <button id="downloadResult" class="btn-secondary">
+                        <span class="btn-icon">💾</span>
+                        บันทึกผล
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="settings-panel">
+            <button id="settingsBtn" class="settings-btn">⚙️ การตั้งค่า</button>
+            <div class="settings-content" id="settingsContent" style="display: none;">
+                <h4>การตั้งค่าการตรวจจับ</h4>
+                
+                <div class="setting-item">
+                    <label>ความเข้มงวดในการตรวจจับ</label>
+                    <input type="range" id="strictnessLevel" min="1" max="10" value="7">
+                    <span id="strictnessValue">7</span>
+                </div>
+
+                <div class="setting-item">
+                    <label>
+                        <input type="checkbox" id="showLandmarks" checked>
+                        แสดงจุดบนใบหน้า
+                    </label>
+                </div>
+
+                <div class="setting-item">
+                    <label>
+                        <input type="checkbox" id="showBoundingBox" checked>
+                        แสดงกรอบใบหน้า
+                    </label>
+                </div>
+
+                <div class="setting-item">
+                    <label>
+                        <input type="checkbox" id="enableSound">
+                        เปิดเสียงเตือน
+                    </label>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <canvas id="canvas" style="display: none;"></canvas>
     
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-detection@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/blazeface@latest"></script>
     <script src="script.js"></script>
 </body>
 </html>
